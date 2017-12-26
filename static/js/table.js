@@ -30,7 +30,7 @@ animateApp.controller('mainController', function($rootScope,$scope,$http,$state,
         $scope.progressbar.start();
         $rootScope.queried_cases=[];
         $http({
-                url:'http://127.0.0.1:5000/query',
+                url:'https://arcane-temple-65655.herokuapp.com/query',
                 method:'get',
                 params:{'receipt_number':$('#receipt').val(), 'case_number':$('#case').val()}
             }).then(function (response) {
