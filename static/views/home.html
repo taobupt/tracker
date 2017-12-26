@@ -1,0 +1,64 @@
+<div  class="md-padding col-md-8 col-md-offset-2" ng-cloak layout="column">
+                <div class="card" style="opacity: 0.85">
+                    <div class="card-header">
+                        <strong>Search</strong>
+                    </div>
+                    <div class="card-block">
+                        <div class="row">
+
+                            <div class="col-sm-12">
+
+                                <div class="form-group" ng-controller="mainController">
+                                    <label for="receipt">Receipt Number</label>
+                                    <input type="text" class="form-control" id="receipt" ng-model="receipt_number">
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <!--/.row-->
+
+                        <div class="row">
+
+                            <div class="col-sm-12">
+
+                                <div class="form-group" ng-controller="mainController">
+                                    <label for="case">Number Of Case</label>
+                                    <input type="text" class="form-control" id="case" ng-model="cases">
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6"></div>
+                            <button type="submit" class="btn btn-sm btn-primary" ng-click="submitCard()">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <table ng-controller="mainController" class="table table-bordered table-striped table-condensed">
+                            <thead>
+                            <tr>
+                                <th>Receipt Number</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Case Type</th>
+                                <th>Request Date</th>
+                                <th>Form Type</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="case in queried_cases">
+                                <td>{{case.receipt_number}}</td>
+                                <td>{{case.date}}</td>
+                                <td>{{case.status}}</td>
+                                <td>{{case.type}}</td>
+                                <td>{{case.request_date}}</td>
+                                <td>{{case.form_type}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                </div>
+</div>
