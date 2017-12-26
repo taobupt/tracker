@@ -11,14 +11,6 @@ chest==0.2.3
 click==6.7
 cloudpickle==0.2.2
 Cython==0.25.2
-cytoolz==0.8.2
-dask==0.13.0
-datashape==0.5.4
-decorator==4.0.11
-dill==0.2.5
-docutils==0.13.1
-et-xmlfile==1.0.1
-fastcache==1.0.2
 Flask==0.12
 Flask-Cors==3.0.2
 gevent==1.2.1
