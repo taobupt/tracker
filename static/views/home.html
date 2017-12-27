@@ -54,7 +54,7 @@
                                 <td>{{case.receipt_number}}</td>
                                 <td>{{case.date}}</td>
                                 <td>{{case.status}}</td>
-                                <td>{{case.type}}</td>
+                                <td><div ng-bind-html="case.type"></div></td>
                                 <td>{{case.request_date}}</td>
                                 <td>{{case.form_type}}</td>
                             </tr>
