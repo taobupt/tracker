@@ -1,1 +1,1 @@
-web: gunicorn tracker:app
+web: gunicorn tracker:app --timeout 2000

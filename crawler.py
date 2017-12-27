@@ -4,6 +4,7 @@ from model.mailed_case import MailedCase
 from model.produced_case import ProducedCase
 from model.received_case import ReceivedCase
 from model.abnormal_case import AbnormalCase
+from model.invalid_case import InvalidCase
 
 
 def add_one(num):
@@ -71,6 +72,8 @@ class Crawler:
                 case_model = ReceivedCase(start_date, current_status, num, form_type)
             elif current_status == 'New Card Is Being Produced':
                 case_model = ProducedCase(start_date, current_status, num)
+            elif len(current_status) == 0:
+                case_model = InvalidCase(None, None, num)
             else:
                 case_model = AbnormalCase(start_date, current_status, num, text[2])
         return case_model
