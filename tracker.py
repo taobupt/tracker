@@ -1,9 +1,35 @@
 from flask import Flask, render_template, request, jsonify
-from crawler import Crawler
+import requests
+from bs4 import BeautifulSoup
+from model.mailed_case import MailedCase
+from model.produced_case import ProducedCase
+from model.received_case import ReceivedCase
+from model.abnormal_case import AbnormalCase
+from model.invalid_case import InvalidCase
+import constants
+from flask_celery import make_celery
 import json
 
 app = Flask(__name__)
+app.config['CELERY_RESULT_BACKEND'] = constants.CELERY_RESULT_BACKEND
+app.config['CELERY_BROKER_URL'] = constants.CELERY_BROKER_URL
 
+celery = make_celery(app)
+
+
+def save_file(self, content):
+    with open(self.file_name, 'w')as f:
+        f.write(content)
+
+
+def add_one(num):
+    ind = 0
+    while ind < len(num):
+        if num[ind].isdigit():
+            break
+        else:
+            ind += 1
+    return num[0:ind] + str(int(num[ind:]) + 1)
 
 @app.route('/')
 def hello_world():
@@ -11,13 +37,41 @@ def hello_world():
 
 
 @app.route('/query')
-def query():
-    craw = Crawler()
-    case_number = int(request.args.get('case_number'))
-    cases = craw.query_range(request.args.get('receipt_number'), case_number if case_number is not None else 1)
-    cases = [json.dumps(case.__dict__) for case in cases]
-    return jsonify(cases)
+def get_case():
+    with app.app_context():
+        start = request.args.get('receipt_number')
+        case_num = int(request.args.get('case_number'))
+        for i in range(case_num):
+            query.delay(start)
+            start = add_one(start)
+        return "querying......"
 
+@celery.task(name = 'tracker.query')
+def query(num):
+    constants.data[3] = ('appReceiptNum', num)
+    response = requests.post('https://egov.uscis.gov/casestatus/mycasestatus.do', headers=constants.headers,
+                             cookies=constants.cookies,
+                             data=constants.data).text
+    soup = BeautifulSoup(response, 'html.parser')
+    core = soup.find_all('div', {'class': 'rows text-center'})
+    case_model = None
+    for date in core:
+        current_status = date.find('h1').text
+        text = date.find('p').text.split(',')
+        start_date = ' '.join(''.join(xx for xx in text[:2]).split(' ')[1:])
+        if current_status == 'Card Was Mailed To Me':
+            request_date = ' '.join(''.join(xx for xx in text[3:5]).split(' ')[-3:])
+            case_model = MailedCase(start_date, current_status, num, request_date)
+        elif current_status == 'Case Was Received':
+            form_type = text[2].split(' ')[-1]
+            case_model = ReceivedCase(start_date, current_status, num, form_type)
+        elif current_status == 'New Card Is Being Produced':
+            case_model = ProducedCase(start_date, current_status, num)
+        elif len(current_status) == 0:
+            case_model = InvalidCase(None, None, num)
+        else:
+            case_model = AbnormalCase(start_date, current_status, num, text[2])
+    return case_model
 
 if __name__ == '__main__':
     app.run(debug=True)
