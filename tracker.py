@@ -8,7 +8,9 @@ from model.abnormal_case import AbnormalCase
 from model.invalid_case import InvalidCase
 import constants
 from flask_celery import make_celery
+from celery.result import AsyncResult
 import json
+import redis
 
 app = Flask(__name__)
 app.config['CELERY_RESULT_BACKEND'] = constants.CELERY_RESULT_BACKEND
@@ -41,12 +43,31 @@ def get_case():
     with app.app_context():
         start = request.args.get('receipt_number')
         case_num = int(request.args.get('case_number'))
+        tasks = []
         for i in range(case_num):
-            query.delay(start)
+            tasks.append(query.delay(start).id)
             start = add_one(start)
+        save.delay([], tasks)
         return "querying......"
 
-@celery.task(name = 'tracker.query')
+@celery.task(name = 'tracker.save')
+def save(results, tasks):
+    completed_tasks = []
+    for task in tasks:
+        if AsyncResult(task).ready():
+            completed_tasks.append(task)
+            results.append(task)
+    tasks = list(set(tasks) - set(completed_tasks))
+    if len(tasks) > 0:
+        save.apply_async((results, tasks), countdown=1)
+    else:
+        r = redis.StrictRedis(host='localhost', port=6379, db=0)
+        with open('./static/data/data.json','w')as f:
+            f.write(json.dumps([json.loads(r.get("celery-task-meta-"+x))["result"] for x in results]))
+            #f.write('\n'.join(results))
+
+
+@celery.task(name = 'tracker.query',serializer="json")
 def query(num):
     constants.data[3] = ('appReceiptNum', num)
     response = requests.post('https://egov.uscis.gov/casestatus/mycasestatus.do', headers=constants.headers,
@@ -71,7 +92,7 @@ def query(num):
             case_model = InvalidCase(None, None, num)
         else:
             case_model = AbnormalCase(start_date, current_status, num, text[2])
-    return case_model
+    return case_model.__dict__
 
 if __name__ == '__main__':
     app.run(debug=True)
